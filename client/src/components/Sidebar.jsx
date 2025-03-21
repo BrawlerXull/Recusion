@@ -39,7 +39,7 @@ const sidebarLinks = [
   // },
   {
     title: "Shorts Generator",
-    href: "/shorts-generator",
+    href: "/aigen",
     icon: Video,
     color: "text-pink-500",
   },

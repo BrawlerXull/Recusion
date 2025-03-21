@@ -17,7 +17,6 @@ import {
 import { Accordion, AccordionItem } from "@nextui-org/accordion";
 import { Card, CardBody } from "@nextui-org/card";
 import { Switch } from "@nextui-org/switch";
-import { Button } from "@nextui-org/button";
 import { Divider } from "@nextui-org/divider";
 import { Code } from "@nextui-org/code";
 import { Progress } from "@nextui-org/progress";
@@ -46,6 +45,15 @@ const Input = ({ value, onChange, placeholder }) => (
     placeholder={placeholder}
     className="w-full px-4 py-2 border border-pink-300 rounded-md focus:outline-none focus:border-pink-500 bg-white text-black"
   />
+);
+
+const Button = ({ children, className = "", ...props }) => (
+  <button
+    className={`px-4 py-2 rounded-md font-medium bg-pink-300 text-white hover:bg-pink-400 transition ${className}`}
+    {...props}
+  >
+    {children}
+  </button>
 );
 
 
@@ -266,10 +274,10 @@ export function VideoGenerator({
       videoId={videoId}
     />
   ) : (
-    <div className="space-y-4">
+    <div className="space-y-4 mx-36 my-10">
       {isAI ? (
         <div className="flex flex-col items-center justify-center gap-4 w-full">
-          <p className="text-pink-500">Review AI generated video script</p>
+          <p className="text-pink-500 text-4xl">Review AI generated video script</p>
           <p className={subtitle({ size: "sm" })}>
             AI has generated the video script. You can edit it below if needed.
             Click on "Render Video" to generate the video.
@@ -1177,12 +1185,6 @@ const TopicVideoForm: React.FC<TopicVideoFormProps> = ({
               Uploading images may produce issues due to WIP
             </Chip>
           ) : null}
-          <Switch
-            checked={showImageOverrides}
-            onChange={() => setShowImageOverrides(!showImageOverrides)}
-          >
-            Use Uploaded Images
-          </Switch>
           <p className={subtitle({ size: "sm" })}>
             {showImageOverrides
               ? "Upload images (512x512 by default)"

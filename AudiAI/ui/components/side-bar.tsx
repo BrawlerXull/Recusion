@@ -22,7 +22,7 @@ interface SidebarLink {
 const sidebarLinks: SidebarLink[] = [
   {
     title: "Shorts Generator",
-    href: "/innerpage/shorts-generator",
+    href: "/innerpage/aigen",
     icon: Video,
     color: "text-pink-500",
   },
