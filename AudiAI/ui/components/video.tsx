@@ -16,7 +16,6 @@ import {
 } from "@nextui-org/dropdown";
 import { Accordion, AccordionItem } from "@nextui-org/accordion";
 import { Card, CardBody } from "@nextui-org/card";
-import { Input, Textarea } from "@nextui-org/input";
 import { Switch } from "@nextui-org/switch";
 import { Button } from "@nextui-org/button";
 import { Divider } from "@nextui-org/divider";
@@ -38,6 +37,27 @@ import {
   TopicVideoData,
   VideoData,
 } from "@/config/video";
+
+const Input = ({ value, onChange, placeholder }) => (
+  <input
+    type="text"
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    className="w-full px-4 py-2 border border-pink-300 rounded-md focus:outline-none focus:border-pink-500 bg-white text-black"
+  />
+);
+
+
+const Textarea = ({ value, onChange, placeholder }) => (
+  <textarea
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    className="w-full px-4 py-2 border border-pink-300 rounded-md focus:outline-none focus:border-pink-500 bg-white text-black resize-none"
+    rows={4} // Default to 4 rows, can be adjusted
+  />
+);
 
 const videoTypes = [
   {
@@ -249,7 +269,7 @@ export function VideoGenerator({
     <div className="space-y-4">
       {isAI ? (
         <div className="flex flex-col items-center justify-center gap-4 w-full">
-          <p className={title()}>Review AI generated video script</p>
+          <p className="text-pink-500">Review AI generated video script</p>
           <p className={subtitle({ size: "sm" })}>
             AI has generated the video script. You can edit it below if needed.
             Click on "Render Video" to generate the video.
