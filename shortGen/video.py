@@ -469,7 +469,7 @@ def upload_to_youtube():
         API_KEY_FILE = 'cred.json'
         CLIENT_ID = "258906969713-gc1i9mcn8at6uhaj58lf9s49maf6p5r1.apps.googleusercontent.com"
         CLIENT_SECRET = "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"
-        REDIRECT_URI = "http://localhost:3000/oauth2callback"
+        REDIRECT_URI = "http://localhost:5000/oauth2callback"
         # Authenticate YouTube API
         try:
             youtube_client = authenticate_youtube(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)

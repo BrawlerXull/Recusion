@@ -37,7 +37,7 @@ const YouTubeUploadNode = ({ data, isConnectable }:any ) => {
 
       const result = await response.json();
       if (response.ok) {
-        setUploadStatus(`Uploaded successfully! Video URL: ${result.url}`);
+        setUploadStatus(`Uploaded successfully! `);
       } else {
         throw new Error(result.error || 'Upload failed');
       }

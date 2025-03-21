@@ -10,6 +10,8 @@ import logging
 
 # Configure logging
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 # Define YouTube API scopes
 YOUTUBE_SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
@@ -17,30 +19,23 @@ YOUTUBE_SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
 def authenticate_youtube(client_id, client_secret, redirect_uri):
     """
     Authenticate using OAuth direct credentials and return YouTube API client.
-    
-    Parameters:
-    - client_id: OAuth client ID
-    - client_secret: OAuth client secret
-    - redirect_uri: Authorized redirect URI
-    
-    Returns:
-    - youtube: Authenticated YouTube API client
     """
     try:
-        # If we have saved credentials, load them
-        creds = None
+        # Define token file
         token_pickle = 'youtube_token.pickle'
+        creds = None
         
+        # Check if token already exists
         if os.path.exists(token_pickle):
             with open(token_pickle, 'rb') as token:
                 creds = pickle.load(token)
         
-        # If credentials don't exist or are invalid, get new ones
+        # Refresh token if expired or get new token
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                # Create flow directly using client credentials
+                # Create flow using client config
                 client_config = {
                     "installed": {
                         "client_id": client_id,
@@ -50,22 +45,26 @@ def authenticate_youtube(client_id, client_secret, redirect_uri):
                         "token_uri": "https://oauth2.googleapis.com/token"
                     }
                 }
-                
+
                 flow = InstalledAppFlow.from_client_config(
-                    client_config, YOUTUBE_SCOPES)
+                    client_config, YOUTUBE_SCOPES
+                )
                 flow.redirect_uri = redirect_uri
-                creds = flow.run_local_server(port=3005)  # Match your redirect URI port
-            
-            # Save credentials for future runs
+                creds = flow.run_local_server(port=3005)  # Make sure this matches
+
+            # Save new token for future use
             with open(token_pickle, 'wb') as token:
                 pickle.dump(creds, token)
-        
+
+        # Build the YouTube API client
         youtube = build('youtube', 'v3', credentials=creds)
         logger.info("YouTube API authenticated successfully")
         return youtube
+
     except Exception as e:
         logger.error(f"YouTube authentication failed: {str(e)}")
         raise
+    
 def upload_video(youtube, video_path, title, description, category_id='22', tags=None):
     """
     Upload video to YouTube.
