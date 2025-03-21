@@ -1,0 +1,31 @@
+# Env file
+.env
+
+# Old code
+old/
+python/
+ui/
+
+# Video/audio output
+*.mp4
+*.mp3
+
+# Temporary folder
+video_temp/
+temp/
+
+# Resourse folder
+res/
+
+# Coverage folder
+coverage/
+
+# Docs
+docs/
+typedoc/
+
+# Example folder
+example/
+
+# GitHub folder
+.github/
