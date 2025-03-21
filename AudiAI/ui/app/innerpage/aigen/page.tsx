@@ -3,12 +3,17 @@ import { useState } from "react";
 import { Accordion, AccordionItem } from "@nextui-org/accordion";
 import { useDisclosure } from "@nextui-org/modal";
 import { Input } from "@nextui-org/input";
-import { Button } from "@nextui-org/button";
 import { Divider } from "@nextui-org/divider";
 import { Progress } from "@nextui-org/progress";
 import { Code } from "@nextui-org/code";
 import { Chip } from "@nextui-org/chip";
 
+
+const Button = ({ children, className = "", ...props }) => (
+  <button className={`px-4 py-2 rounded-md font-medium bg-pink-500 ${className}`} {...props}>
+    {children}
+  </button>
+);
 
 
 import AdvancedOptions from "@/components/options";
@@ -98,10 +103,16 @@ export default function AIGen() {
       options={advancedOptions}
     />
   ) : (
-    <div className="flex flex-col items-center justify-center gap-4 w-full">
+    <div
+      className="font-inter bg-white min-h-screen relative"
+      style={{
+        backgroundSize: "40px 40px",
+        zIndex: 0,
+      }}
+    >
       <div className="flex items-center gap-4">
 
-        <p className={title()}>Generate video with AI!</p>
+        <p className="text-black">Generate video with AI!</p>
       </div>
       <p className={subtitle({ size: "sm" })}>
         Enter a prompt for the AI to generate a video.
@@ -115,11 +126,11 @@ export default function AIGen() {
         variant="faded"
         onChange={(e) => setPrompt(e.target.value)}
       />
-      <div className="flex flex-row gap-2 overflow-x-auto max-w-full">
+      <div className="flex flex-row gap-2 overflow-x-auto max-w-full text-black">
         {promptSuggestions.map((suggestion, _) => (
           <Chip
             key={suggestion}
-            className="text-xs cursor-pointer "
+            className="text-xs cursor-pointer text-black"
 
             variant="bordered"
             onClick={() => setPrompt(suggestion)}
@@ -132,6 +143,7 @@ export default function AIGen() {
       <Button color="primary" size="lg" variant="shadow" onClick={openModal}>
         Render Video
       </Button>
+
       <ConfirmModal
         advancedOptions={advancedOptions}
         confirmModal={confirmModal}
@@ -162,8 +174,8 @@ export const AIOutput = ({
   ) : (
     <>
       {aiError ? (
-        <div className="flex flex-col items-center justify-center gap-4 w-full">
-          <p className={title()}>Error generating video with AI</p>
+        <div className="flex flex-col items-center justify-center gap-4 w-full ">
+          <p className="text-black">Error generating video with AI</p>
           <p className={subtitle({ size: "sm" })}>
             An error occurred while generating the video script with AI. Please
             check the error message below.

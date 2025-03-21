@@ -7,7 +7,7 @@ export default function AIGenLayout({
 
 
           
-          <div>
+          <div className="">
 {children}
           </div>
     );

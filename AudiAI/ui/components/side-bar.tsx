@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         </nav>
       </aside>
 
-      <div className="flex-1 flex flex-col md:ml-64 p-6 relative z-10">
+      <div className="flex-1 flex flex-col md:ml-64 relative z-10 bg-slate-50 text-black">
         {children}
       </div>
     </div>
