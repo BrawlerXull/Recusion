@@ -12,6 +12,7 @@ import {
   Video,
   Frame,
   Minimize,
+  Captions,
 } from "lucide-react";
 
 interface SidebarLink {
@@ -38,6 +39,12 @@ const sidebarLinks: SidebarLink[] = [
     title: "Frame Aspects",
     href: "/innerpage/frame",
     icon: Frame,
+    color: "text-pink-500",
+  },
+  {
+    title: "Caption",
+    href: "/innerpage/caption",
+    icon: Captions,
     color: "text-pink-500",
   },
 ];
