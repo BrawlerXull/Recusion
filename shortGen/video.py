@@ -15,6 +15,10 @@ import whisper
 import subprocess
 import pandas as pd
 
+# Import new modules
+from utils.scene_intensity import analyze_scene_intensity
+from utils.sentiment_analysis import analyze_sentiment
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -43,6 +47,84 @@ jobs = {}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def merge_scores(sentiment_scores, intensity_scores, weight_sentiment=0.4, weight_intensity=0.6, num_highlights=3):
+    """
+    Merge sentiment analysis scores and visual intensity scores to find the best highlights.
+    
+    Parameters:
+    - sentiment_scores: List of dicts with {'start_time', 'end_time', 'score'} from sentiment analysis
+    - intensity_scores: List of dicts with {'start_time', 'end_time', 'score'} from scene intensity
+    - weight_sentiment: Weight to give sentiment scores in the final scoring (0-1)
+    - weight_intensity: Weight to give intensity scores in the final scoring (0-1)
+    - num_highlights: Number of highlights to return
+    
+    Returns:
+    - List of dicts with {'start_time', 'end_time', 'score'} representing the top highlights
+    """
+    # Normalize scores within each category
+    def normalize_scores(scores_list):
+        if not scores_list:
+            return []
+            
+        max_score = max(item['score'] for item in scores_list)
+        min_score = min(item['score'] for item in scores_list)
+        score_range = max_score - min_score if max_score > min_score else 1
+        
+        normalized = []
+        for item in scores_list:
+            normalized_item = item.copy()
+            normalized_item['score'] = (item['score'] - min_score) / score_range
+            normalized.append(normalized_item)
+        return normalized
+    
+    norm_sentiment = normalize_scores(sentiment_scores)
+    norm_intensity = normalize_scores(intensity_scores)
+    
+    # Create segments dictionary to track all potential highlight segments
+    all_segments = {}
+    
+    # Add sentiment segments
+    for item in norm_sentiment:
+        key = (item['start_time'], item['end_time'])
+        if key not in all_segments:
+            all_segments[key] = {
+                'start_time': item['start_time'],
+                'end_time': item['end_time'],
+                'sentiment_score': item['score'],
+                'intensity_score': 0
+            }
+        else:
+            all_segments[key]['sentiment_score'] = item['score']
+    
+    # Add intensity segments
+    for item in norm_intensity:
+        key = (item['start_time'], item['end_time'])
+        if key not in all_segments:
+            all_segments[key] = {
+                'start_time': item['start_time'],
+                'end_time': item['end_time'],
+                'sentiment_score': 0,
+                'intensity_score': item['score']
+            }
+        else:
+            all_segments[key]['intensity_score'] = item['score']
+    
+    # Calculate combined scores
+    merged_results = []
+    for segment in all_segments.values():
+        combined_score = (segment['sentiment_score'] * weight_sentiment + 
+                         segment['intensity_score'] * weight_intensity)
+        
+        merged_results.append({
+            'start_time': segment['start_time'],
+            'end_time': segment['end_time'],
+            'score': combined_score
+        })
+    
+    # Sort by score and return top highlights
+    merged_results.sort(key=lambda x: x['score'], reverse=True)
+    return merged_results[:num_highlights]
+
 # Video processing function
 def process_video(video_path, job_id, num_highlights=3, highlight_duration=(20, 30)):
     """Process a video file to generate highlights"""
@@ -67,6 +149,7 @@ def process_video(video_path, job_id, num_highlights=3, highlight_duration=(20, 
         
         # Extract audio and transcribe if available
         transcript = None
+        sentiment_scores = []
         if has_audio:
             audio_path = os.path.join('temp', f"{job_id}_audio.wav")
             clip.audio.write_audiofile(audio_path)
@@ -84,9 +167,13 @@ def process_video(video_path, job_id, num_highlights=3, highlight_duration=(20, 
                 # Save transcript
                 with open(os.path.join(job_folder, 'transcript.txt'), 'w') as f:
                     f.write(transcript)
+
+                if transcript:
+                    sentiment_scores = analyze_sentiment(transcript)
+                    logger.info(f"Sentiment analysis completed. Top sentiment lines: {len(sentiment_scores)}")
             except Exception as e:
                 logger.error(f"Transcription error: {str(e)}")
-            
+
             # Remove temporary audio file
             if os.path.exists(audio_path):
                 os.remove(audio_path)
@@ -98,6 +185,9 @@ def process_video(video_path, job_id, num_highlights=3, highlight_duration=(20, 
         scenes_file = os.path.abspath(os.path.join('temp', f"{job_id}_scenes.csv"))
         scene_output_dir = os.path.abspath(os.path.join('temp', f"{job_id}_scenes"))
         os.makedirs(scene_output_dir, exist_ok=True)
+        
+        scenes_df = None
+        intensity_scores = []
         
         try:
             subprocess.run([
@@ -111,18 +201,28 @@ def process_video(video_path, job_id, num_highlights=3, highlight_duration=(20, 
             ], check=True)
             
             logger.info("Scene detection completed")
-            scenes_df = None
             
             # Read the CSV file with scene information
             if os.path.exists(scenes_file):
                 try:
                     scenes_df = pd.read_csv(scenes_file)
                     logger.info(f"Detected {len(scenes_df)} scenes")
+                    
+                    # Extract scene times
+                    scene_times = []
+                    if scenes_df is not None and len(scenes_df) > 0:
+                        scene_times = [
+                            (scenes_df.iloc[i]['Start Time (seconds)'], scenes_df.iloc[i]['End Time (seconds)'])
+                            for i in range(len(scenes_df))
+                        ]
+                    
+                    # Analyze intensity and update results
+                    intensity_scores = analyze_scene_intensity(video_path, scene_times)
+                    logger.info(f"Scene intensity analysis completed. Top scenes: {len(intensity_scores)}")
                 except Exception as e:
                     logger.error(f"Error reading scene CSV: {str(e)}")
         except Exception as e:
             logger.error(f"Scene detection error: {str(e)}")
-            scenes_df = None
         
         # Update progress
         jobs[job_id]['progress'] = 70
@@ -130,9 +230,42 @@ def process_video(video_path, job_id, num_highlights=3, highlight_duration=(20, 
         # Determine highlights
         highlights = []
         
-        # If we have scene data, use it
-        if scenes_df is not None and len(scenes_df) > 0:
-            for i in range(min(num_highlights, len(scenes_df))):
+        # Merge sentiment and intensity scores to get top highlights
+        if transcript and intensity_scores:
+            merged_scores = merge_scores(sentiment_scores, intensity_scores, num_highlights=num_highlights)
+            logger.info(f"Merged scores generated. Top {len(merged_scores)} highlights selected.")
+            
+            # Use merged_scores for highlight generation
+            for score in merged_scores:
+                start_time = score['start_time']
+                end_time = score['end_time']
+                
+                # Ensure minimum and maximum duration
+                current_duration = end_time - start_time
+                if current_duration < highlight_duration[0]:
+                    # Extend if too short
+                    extension = (highlight_duration[0] - current_duration) / 2
+                    start_time = max(0, start_time - extension)
+                    end_time = min(total_duration, end_time + extension)
+                elif current_duration > highlight_duration[1]:
+                    # Trim if too long
+                    middle = (start_time + end_time) / 2
+                    half_duration = highlight_duration[1] / 2
+                    start_time = middle - half_duration
+                    end_time = middle + half_duration
+                
+                # Ensure we don't exceed clip duration
+                if end_time > total_duration:
+                    end_time = total_duration
+                
+                # Add highlight based on merged scores
+                if start_time < end_time:
+                    highlights.append((start_time, end_time))
+        
+        # If we don't have enough highlights from merged scores, fall back to scene detection
+        if len(highlights) < num_highlights and scenes_df is not None and len(scenes_df) > 0:
+            scenes_needed = num_highlights - len(highlights)
+            for i in range(min(scenes_needed, len(scenes_df))):
                 start_time = scenes_df.iloc[i]['Start Time (seconds)']
                 max_duration = min(highlight_duration[1], scenes_df.iloc[i]['Length (seconds)'])
                 end_time = start_time + max_duration
@@ -149,7 +282,7 @@ def process_video(video_path, job_id, num_highlights=3, highlight_duration=(20, 
                 
                 highlights.append((start_time, end_time))
         
-        # If we need more highlights or no scenes were detected
+        # If we still need more highlights or no scenes were detected
         remaining = num_highlights - len(highlights)
         if remaining > 0:
             segment_length = min(highlight_duration[1], total_duration / (remaining + 1))
@@ -341,6 +474,7 @@ def download_file(job_id, filename):
     
     # Validate filename
     file_path = os.path.join(RESULTS_FOLDER, job_id, filename)
+    print("filepath",file_path)
     if not os.path.exists(file_path):
         return jsonify({'error': 'File not found'}), 404
     
