@@ -2,9 +2,8 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow  # Add this import
+from google_auth_oauthlib.flow import InstalledAppFlow
 import pickle
-
 import os
 import logging
 
@@ -12,9 +11,8 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-
 # Define YouTube API scopes
-YOUTUBE_SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
+YOUTUBE_SCOPES = ['https://www.googleapis.com/auth/youtube.upload', 'https://www.googleapis.com/auth/yt-analytics.readonly']
 
 def authenticate_youtube(client_id, client_secret, redirect_uri):
     """
@@ -64,7 +62,7 @@ def authenticate_youtube(client_id, client_secret, redirect_uri):
     except Exception as e:
         logger.error(f"YouTube authentication failed: {str(e)}")
         raise
-    
+
 def upload_video(youtube, video_path, title, description, category_id='22', tags=None):
     """
     Upload video to YouTube.
@@ -144,3 +142,136 @@ def upload_video(youtube, video_path, title, description, category_id='22', tags
     except Exception as e:
         logger.error(f"YouTube upload failed: {str(e)}")
         raise
+
+def get_video_analytics(youtube, video_id, start_date, end_date):
+    """
+    Fetch analytics data for a specific video.
+    
+    Parameters:
+    - youtube: Authenticated YouTube API client
+    - video_id: YouTube video ID
+    - start_date: Start date for analytics (format: 'YYYY-MM-DD')
+    - end_date: End date for analytics (format: 'YYYY-MM-DD')
+    
+    Returns:
+    - analytics_data: Analytics data for the video
+    """
+    try:
+        # Request analytics data for the uploaded video
+        request = youtube.analytics().reports().query(
+            ids=f'channel=={video_id}',
+            startDate=start_date,
+            endDate=end_date,
+            metrics='views,likes,dislikes,comments,subscribersGained,subscribersLost',
+            filters=f'video=={video_id}'
+        )
+        
+        response = request.execute()
+        
+        # Log the analytics data
+        logger.info(f"Analytics Data for Video ID {video_id}: {response}")
+        
+        # Return the analytics data
+        return response
+
+    except Exception as e:
+        logger.error(f"Failed to fetch video analytics: {str(e)}")
+        raise
+
+def get_authenticated_channel_id(youtube):
+    """
+    Get the authenticated user's YouTube channelId.
+    """
+    try:
+        # Request the authenticated user's channel details
+        request = youtube.channels().list(
+            part='snippet,contentDetails',
+            mine=True  # This ensures we're fetching the authenticated user's channel
+        )
+        
+        # Execute the request
+        response = request.execute()
+        
+        # Extract channelId from the response
+        if 'items' in response and len(response['items']) > 0:
+            channel_id = response['items'][0]['id']
+            return channel_id
+        else:
+            raise Exception("No channel found for the authenticated user.")
+    
+    except Exception as e:
+        logger.error(f"Failed to fetch channel ID: {str(e)}")
+        raise
+
+
+def get_all_video_ids(youtube):
+    """
+    Fetch all video IDs from a specific channel.
+    
+    Parameters:
+    - youtube: Authenticated YouTube API client
+    - channel_id: The channel's ID to fetch videos from
+    
+    Returns:
+    - video_ids: List of video IDs for the channel
+    """
+    try:
+        video_ids = []
+
+        channel_id = get_authenticated_channel_id(youtube=youtube)
+        
+        # Fetch the list of videos from the channel
+        request = youtube.channels().list(
+            part='contentDetails',
+            id=channel_id
+        )
+        response = request.execute()
+        
+        # Extract playlist ID of uploaded videos
+        playlist_id = response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+        
+        # Fetch the video IDs from the playlist
+        request = youtube.playlistItems().list(
+            part='snippet',
+            playlistId=playlist_id,
+            maxResults=50  # Adjust as needed
+        )
+        response = request.execute()
+        
+        # Collect video IDs
+        for item in response['items']:
+            video_ids.append(item['snippet']['resourceId']['videoId'])
+        
+        # Log the video IDs
+        logger.info(f"Fetched {len(video_ids)} video IDs from channel {channel_id}")
+        
+        return video_ids
+    
+    except Exception as e:
+        logger.error(f"Failed to fetch video IDs: {str(e)}")
+        raise
+
+def get_video_analytics_for_all_videos(youtube, start_date, end_date):
+    """
+    Fetch analytics for all videos in a channel.
+    
+    Parameters:
+    - youtube: Authenticated YouTube API client
+    - channel_id: The channel's ID to fetch videos from
+    - start_date: Start date for analytics (format: 'YYYY-MM-DD')
+    - end_date: End date for analytics (format: 'YYYY-MM-DD')
+    
+    Returns:
+    - analytics_data: List of analytics data for all videos
+    """
+    channel_id = get_authenticated_channel_id(youtube=youtube)
+    video_ids = get_all_video_ids(youtube, channel_id)
+    
+    all_analytics_data = []
+    
+    for video_id in video_ids:
+        analytics_data = get_video_analytics(youtube, video_id, start_date, end_date)
+        all_analytics_data.append(analytics_data)
+    
+    # Return the analytics data for all videos
+    return all_analytics_data
