@@ -18,6 +18,8 @@ import pandas as pd
 # Import new modules
 from utils.scene_intensity import analyze_scene_intensity
 from utils.sentiment_analysis import analyze_sentiment
+from utils.youtube_uploader import authenticate_youtube, upload_video
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -128,6 +130,17 @@ def merge_scores(sentiment_scores, intensity_scores, weight_sentiment=0.4, weigh
 # Video processing function
 def process_video(video_path, job_id, num_highlights=3, highlight_duration=(20, 30)):
     """Process a video file to generate highlights"""
+    # Path to your service account JSON key
+    API_KEY_FILE = 'Recusion\shortGen\cred.json'
+
+# Authenticate YouTube API once when the app starts
+    try:
+        youtube_client = authenticate_youtube(API_KEY_FILE)
+    except Exception as e:
+        logger.error(f"Failed to authenticate with YouTube API: {str(e)}")
+        youtube_client = None
+
+# another
     try:
         job_folder = os.path.join(RESULTS_FOLDER, job_id)
         os.makedirs(job_folder, exist_ok=True)
@@ -342,6 +355,38 @@ def process_video(video_path, job_id, num_highlights=3, highlight_duration=(20, 
         
         # Clean up
         clip.close()
+
+        # Upload highlights to YouTube
+        if youtube_client:
+            for i, highlight_path in enumerate(highlight_paths):
+                try:
+                    title = f"Highlight {i+1} - {os.path.basename(video_path)}"
+                    description = f"Automatically generated highlight from {os.path.basename(video_path)}"
+            
+            # Default to unlisted for safety
+                    privacy_status = 'unlisted'
+            
+            # Custom tags for better searchability
+                    tags = ['AI Generated', 'Video Highlights', 'Automatic Editing']
+            
+                    video_id, status = upload_video(
+                    youtube_client, 
+                    highlight_path, 
+                    title, 
+                    description,
+                    
+                 )
+            
+                    logger.info(f"Uploaded highlight {i+1} to YouTube. Video ID: {video_id}, Status: {status}")
+            
+            # Add YouTube info to metadata
+                    metadata[i]["youtube_id"] = video_id
+                    metadata[i]["youtube_url"] = f"https://www.youtube.com/watch?v={video_id}"
+            
+                except Exception as e:
+                    logger.error(f"Error uploading highlight {i+1} to YouTube: {str(e)}")
+                    metadata[i]["youtube_error"] = str(e)
+
         
         # Update job status to complete
         jobs[job_id]['status'] = 'complete'
@@ -360,8 +405,123 @@ def process_video(video_path, job_id, num_highlights=3, highlight_duration=(20, 
         return False
 
 # API Routes
+
+@app.route('/api/uploadToYoutube', methods=['POST'])
+def upload_to_youtube():
+    """
+    Endpoint to upload a video to YouTube.
+    
+    Expected JSON payload:
+    {
+        "video_id": "job_id_of_processed_video",
+        "highlight_index": 0,  # (optional) Index of the highlight to upload, default is 0
+        "title": "Custom title",  # (optional)
+        "description": "Custom description",  # (optional)
+        "privacy": "unlisted"  # (optional) "public", "private", or "unlisted"
+    }
+    """
+    try:
+        # Validate request data
+        if not request.is_json:
+            return jsonify({'error': 'Request must be JSON'}), 400
+            
+        data = request.json
+        
+        # Check required fields
+        if 'video_id' not in data:
+            return jsonify({'error': 'Missing required field: video_id'}), 400
+            
+        job_id = data['video_id']
+
+        # Print for debugging
+        print("Received job_id:", job_id)
+        print("Received job_id:", jobs)
+
+        
+        # Check if job exists
+        if not isinstance(job_id, str):
+            return jsonify({'error': 'job_id must be a string'}), 400
+
+        if job_id not in jobs:
+            return jsonify({'error': 'Job not found'}), 404
+            
+        job = jobs[job_id]
+        
+        # Check if job is complete
+        if job.get('status') != 'complete':
+            return jsonify({'error': 'Video processing is not complete yet'}), 400
+        
+        # Get highlight index (default to 0)
+        highlight_index = int(data.get('highlight_index', 0))
+        
+        # Validate highlight index
+        if not job.get('metadata') or highlight_index >= len(job.get('metadata', [])):
+            return jsonify({'error': 'Invalid highlight index'}), 400
+            
+        highlight_metadata = job['metadata'][highlight_index]
+        highlight_path = os.path.join(RESULTS_FOLDER, job_id, highlight_metadata['filename'])
+        
+        # Check if file exists
+        if not os.path.exists(highlight_path):
+            return jsonify({'error': 'Highlight file not found'}), 404
+        
+        # Path to YouTube credentials
+        API_KEY_FILE = 'cred.json'
+        CLIENT_ID = "258906969713-gc1i9mcn8at6uhaj58lf9s49maf6p5r1.apps.googleusercontent.com"
+        CLIENT_SECRET = "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"
+        REDIRECT_URI = "http://localhost:5000/oauth2callback"
+        # Authenticate YouTube API
+        try:
+            youtube_client = authenticate_youtube(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
+        except Exception as e:
+            logger.error(f"Failed to authenticate with YouTube API: {str(e)}")
+            return jsonify({'error': f'YouTube authentication failed: {str(e)}'}), 500
+            
+        # Prepare upload parameters
+        title = data.get('title', f"Highlight {highlight_index + 1} - {job['filename']}")
+        description = data.get('description', f"Automatically generated highlight from {job['filename']}")
+        privacy_status = data.get('privacy', 'unlisted')
+        
+        # Valid privacy status values
+        valid_privacy = ['public', 'private', 'unlisted']
+        if privacy_status not in valid_privacy:
+            privacy_status = 'unlisted'  # Default to unlisted if invalid
+            
+        # Custom tags
+        tags = data.get('tags', ['AI Generated', 'Video Highlights', 'Automatic Editing'])
+        
+        # Upload to YouTube
+        try:
+            video_id, status = upload_video(
+                youtube_client,
+                highlight_path,
+                title,
+                description,
+
+                
+            )
+            
+            # Save YouTube info in metadata
+            highlight_metadata["youtube_id"] = video_id
+            highlight_metadata["youtube_url"] = f"https://www.youtube.com/watch?v={video_id}"
+            
+            return jsonify({
+                'success': True,
+                'video_id': video_id,
+                'status': status,
+                'youtube_url': f"https://www.youtube.com/watch?v={video_id}"
+            }), 200
+            
+        except Exception as e:
+            logger.error(f"YouTube upload failed: {str(e)}")
+            return jsonify({'error': f'YouTube upload failed: {str(e)}'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error in upload_to_youtube endpoint: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/upload', methods=['POST'])
-def upload_video():
+def upload_videoo():
     # Check if the post request has the file part
     if 'video' not in request.files:
         return jsonify({'error': 'No video file provided'}), 400
