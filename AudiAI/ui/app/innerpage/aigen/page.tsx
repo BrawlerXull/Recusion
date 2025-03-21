@@ -16,7 +16,7 @@ import { VideoGenerator } from "@/components/video";
 // Keeping your original Button component
 const Button = ({ children, className = "", ...props }) => (
   <button
-    className={`px-4 py-2 rounded-md font-medium bg-pink-300 text-white hover:bg-pink-400 transition ${className}`}
+    className={`px-4 py-2 rounded-md font-medium bg-pink-600 text-white hover:bg-pink-700 transition ${className}`}
     {...props}
   >
     {children}
@@ -184,7 +184,7 @@ export const AIOutput = ({ aiResponse, aiError, options }) => {
     <div className="font-inter bg-gradient-to-br from-pink-50 via-white to-purple-50 min-h-screen py-16 px-4">
       {aiResponse ? (
         <div className="flex flex-col items-center justify-center gap-6 w-full">
-          <Card className="w-full max-w-4xl border border-pink-100 shadow-xl overflow-hidden backdrop-blur-sm bg-white/80">
+          <Card className="w-full max-w-4xl border border-pink-100  bg-white/80">
             <div className="absolute top-0 right-0 w-32 h-32 bg-pink-100 rounded-full -mr-16 -mt-16 opacity-50"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-100 rounded-full -ml-12 -mb-12 opacity-50"></div>
             
