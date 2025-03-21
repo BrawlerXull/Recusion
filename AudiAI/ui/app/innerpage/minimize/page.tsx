@@ -32,7 +32,7 @@ import { defaultVideoOptions } from "@/config/options";
 import { BACKEND_ENDPOINT } from "@/config/backend";
 import { VideoGenerator } from "@/components/video";
 
-export default function AIGen() {
+export default function Minimize() {
   const confirmModal = useDisclosure();
 
   const [prompt, setPrompt] = useState("");
