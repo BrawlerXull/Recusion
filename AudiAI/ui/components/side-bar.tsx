@@ -10,6 +10,8 @@ import {
   LogOut,
   HandHelping,
   Video,
+  Frame,
+  Minimize,
 } from "lucide-react";
 
 interface SidebarLink {
@@ -29,7 +31,13 @@ const sidebarLinks: SidebarLink[] = [
   {
     title: "Minimize",
     href: "/innerpage/minimize",
-    icon: Video,
+    icon: Minimize,
+    color: "text-pink-500",
+  },
+  {
+    title: "Frame Aspects",
+    href: "/innerpage/frame",
+    icon: Frame,
     color: "text-pink-500",
   },
 ];
