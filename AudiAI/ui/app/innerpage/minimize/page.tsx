@@ -14,6 +14,9 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
+import YouTubeUploadNode from '../../../components/youtubeNode';
+
+
 // Define custom node components
 const VideoInputNode = ({ data, isConnectable }) => {
   return (
@@ -312,7 +315,9 @@ const nodeTypes = {
   processing: ProcessingNode,
   results: ResultsNode,
   highlightResult: HighlightResultNode,
-  transcript: TranscriptNode
+  transcript: TranscriptNode,
+  youtubeUpload: YouTubeUploadNode 
+
 };
 
 export default function VideoHighlightsFlowApp() {
@@ -453,6 +458,43 @@ export default function VideoHighlightsFlowApp() {
       setEdges([...filteredEdges, ...resultEdges]);
     }
   }, [highlights, highlightFrames]);
+
+  useEffect(() => {
+    if (highlights.length > 0) {
+      const filteredNodes = nodes.filter(node => !node.type || (node.type !== 'highlightResult' && node.type !== 'youtubeUpload'));
+  
+      const resultNodes = highlights.map((highlight, index) => {
+        const xPos = 100 + (index % 3) * 300; 
+        const yPos = 750 + Math.floor(index / 3) * 350;
+        
+        return {
+          id: `highlight-${highlight.id}`,
+          type: 'highlightResult',
+          position: { x: xPos, y: yPos },
+          draggable: true,
+          data: {
+            highlight,
+            frameOption: highlightFrames[highlight.id] || '16:9',
+            onFrameChange: handleFrameChange
+          }
+        };
+      });
+  
+      // Add a YouTube Upload Node after results
+      const youtubeUploadNode = {
+        id: `youtube-upload`,
+        type: 'youtubeUpload',
+        position: { x: 250, y: 1100 },
+        draggable: true,
+        data: {
+          highlight: highlights[0] // default to first highlight for upload
+        }
+      };
+  
+      setNodes([...filteredNodes, ...resultNodes, youtubeUploadNode]);
+    }
+  }, [highlights, highlightFrames]);
+  
   
   // Update node data
   useEffect(() => {
