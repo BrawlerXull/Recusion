@@ -47,7 +47,7 @@ const LandingPage = () => {
                 Our AI system intelligently extracts the best moments, optimizes
                 clip length, adds captions, and ensures maximum engagement.
               </p>
-              <Link href="/aigen" className="flex justify-center gap-4 mt-8">
+              <Link href="/innerpage/aigen" className="flex justify-center gap-4 mt-8">
 
                 <button className="rounded-full px-8 py-6 text-lg gap-2 bg-pink-500 hover:bg-pink-600 text-white inline-flex items-center">
                   Generate Shorts Now <ArrowRight className="ml-2" size={18} />
@@ -163,7 +163,7 @@ const LandingPage = () => {
                   Share Your Voice Journey
                 </h2>
                 <p className="text-xl mb-8">
-                  Help us improve by sharing your experience with AudiAI
+                  Help us improve by sharing your experience with Automus
                 </p>
                 <button className="px-6 py-3 bg-white text-pink-500 rounded-full hover:bg-pink-50 transition-all duration-300 ease-in-out hover:scale-105">
                   Give Feedback
