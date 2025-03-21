@@ -1,7 +1,8 @@
 "use client";
 
-import React, { ReactNode } from "react";
+import React, { ReactNode, useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation"; // Use usePathname from App Router
 import {
   LayoutDashboard,
   Bot,
@@ -61,6 +62,13 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ children }) => {
+  const pathname = usePathname(); // Get the current path using usePathname
+  const [activeLink, setActiveLink] = useState<string>("");
+
+  useEffect(() => {
+    setActiveLink(pathname); // Set active link based on the current pathname
+  }, [pathname]);
+
   return (
     <div className="flex min-h-screen">
       <aside className="hidden md:flex md:flex-col w-64 bg-white shadow-lg h-screen fixed top-0 left-0 z-50">
@@ -76,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg hover:bg-pink-50"
+              className={`flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg hover:bg-pink-50 ${activeLink === href ? 'bg-pink-100' : ''}`}
             >
               <Icon className={`h-5 w-5 ${color}`} />
               <span>{title}</span>
