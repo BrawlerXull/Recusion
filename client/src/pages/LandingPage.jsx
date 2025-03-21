@@ -2,7 +2,7 @@ import React from "react";
 import { ArrowRight, Check, Menu, Mic, Heart, AlertCircle } from "lucide-react";
 import Navbar from "../components/Navbar";
 import { Link } from "react-router-dom";
-import dashboardImg from "../assets/dashboard.png";
+import dashboardImg from "image.png";
 import wqr from "../assets/wqr.png";
 
 const LandingPage = () => {
@@ -110,7 +110,7 @@ const LandingPage = () => {
                       <div className="bg-gray-800 rounded-t-xl p-2 aspect-[16/10]">
                         <div className="bg-white rounded-lg h-full p-4 overflow-hidden">
                           <img
-                            src={dashboardImg}
+                            src={"image.png"}
                             alt="AI Shorts Generator Dashboard"
                             className="w-full h-full object-cover rounded"
                           />
@@ -162,7 +162,7 @@ const LandingPage = () => {
                   Share Your Voice Journey
                 </h2>
                 <p className="text-xl mb-8">
-                  Help us improve by sharing your experience with AudiAI
+                  Help us improve by sharing your experience with Automus
                 </p>
                 <button className="px-6 py-3 bg-white text-pink-500 rounded-full hover:bg-pink-50 transition-all duration-300 ease-in-out hover:scale-105">
                   Give Feedback
