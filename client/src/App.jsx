@@ -23,7 +23,7 @@ const App = () => {
         <Route >
           <Route element={<AppLayout />}>
             <Route path="/map" element={<Map />} />
-            <Route path="/shorts-generator" element={<ShortsGenerator />} />
+            <Route path="/aigen" element={<ShortsGenerator />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/audibuddy" element={<AudiBuddy />} />
             <Route path="/exercise" element={<ExercisesPage />} />
