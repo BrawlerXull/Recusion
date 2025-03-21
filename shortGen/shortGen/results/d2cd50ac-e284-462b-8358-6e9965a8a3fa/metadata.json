@@ -1,0 +1,14 @@
+{
+  "original_video": "d2cd50ac-e284-462b-8358-6e9965a8a3fa_trimmed.mp4",
+  "total_duration": 120.24,
+  "has_audio": true,
+  "highlights": [
+    {
+      "filename": "highlight_1.mp4",
+      "start_time": 30,
+      "end_time": 60,
+      "duration": 30
+    }
+  ],
+  "transcript": null
+}
