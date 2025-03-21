@@ -6,7 +6,19 @@ from fastapi.responses import FileResponse
 import shutil
 import os
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+
+# Allow all origins for testing; you can restrict this for production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (or specify domains)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
 
 UPLOAD_DIR = "uploads"
 OUTPUT_DIR = "processed"

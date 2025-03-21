@@ -13,6 +13,7 @@ import {
   Frame,
   Minimize,
   Captions,
+  ZoomIn,
 } from "lucide-react";
 
 interface SidebarLink {
@@ -33,6 +34,12 @@ const sidebarLinks: SidebarLink[] = [
     title: "Minimize",
     href: "/innerpage/minimize",
     icon: Minimize,
+    color: "text-pink-500",
+  },
+  {
+    title: "Auto Zoom",
+    href: "/innerpage/zoom",
+    icon: ZoomIn,
     color: "text-pink-500",
   },
   {
