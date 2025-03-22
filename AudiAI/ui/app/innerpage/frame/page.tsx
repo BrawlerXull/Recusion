@@ -6,7 +6,7 @@ import CustomSelect from "./customselect";
 
 const Button = ({ children, className = "", ...props }) => (
   <button
-    className={`px-4 py-2 rounded-md font-medium bg-pink-500 text-white hover:bg-pink-600 transition ${className}`}
+    className={`px-4 py-2 rounded-md font-medium bg-pink-600 text-white hover:bg-pink-700 transition ${className}`}
     {...props}
   >
     {children}
