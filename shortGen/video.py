@@ -20,6 +20,9 @@ from utils.scene_intensity import analyze_scene_intensity
 from utils.sentiment_analysis import analyze_sentiment
 from utils.youtube_uploader import authenticate_youtube, upload_video
 
+from utils.youtube_uploader import get_authenticated_service, get_channel_analytics, get_video_analytics, convert_analytics_to_dataframe, analyze_video_performance, get_all_video_ids
+
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -692,6 +695,92 @@ def health_check():
         'active_jobs': len(jobs),
         'version': '1.0.0'
     }), 200
+
+
+# Route to get authenticated YouTube API service
+@app.route('/api/authenticate', methods=['GET'])
+def authenticate():
+    try:
+        youtube, youtube_analytics = get_authenticated_service()
+        return jsonify({"message": "Authenticated successfully!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Route to get channel analytics
+@app.route('/api/channel/analytics', methods=['GET'])
+def get_channel_overview():
+    try:
+        # Get authenticated YouTube service
+        youtube, youtube_analytics = get_authenticated_service()
+
+        # Get the authenticated channel ID
+        channel_id = get_authenticated_channel_id(youtube)
+        print(f"Authenticated as channel ID: {channel_id}")
+
+        # Get the date range (default: last 30 days)
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+
+        # Fetch channel analytics
+        analytics = get_channel_analytics(youtube_analytics, channel_id, start_date, end_date)
+        
+        # Convert to DataFrame and return it
+        df = convert_analytics_to_dataframe(analytics)
+        if not df.empty:
+            return jsonify(df.to_dict(orient='records')), 200
+        else:
+            return jsonify({"error": "No data available for the selected time period."}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Route to get video analytics for a specific video
+@app.route('/api/video/analytics', methods=['GET'])
+def get_video_performance():
+    try:
+        video_id = request.args.get('video_id')
+        if not video_id:
+            return jsonify({"error": "video_id parameter is required."}), 400
+
+        # Get authenticated YouTube service
+        youtube, youtube_analytics = get_authenticated_service()
+
+        # Get the authenticated channel ID
+        channel_id = get_authenticated_channel_id(youtube)
+
+        # Get the date range (default: last 30 days)
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+
+        # Fetch video analytics
+        analytics = get_video_analytics(youtube_analytics, channel_id, video_id, start_date, end_date)
+
+        # Convert to DataFrame and analyze
+        df = convert_analytics_to_dataframe(analytics)
+        if not df.empty:
+            performance = analyze_video_performance(df)
+            return jsonify({"performance": performance}), 200
+        else:
+            return jsonify({"error": "No data available for the selected video in the selected time period."}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Route to get all videos from the authenticated channel
+@app.route('/api/videos', methods=['GET'])
+def get_all_videos():
+    try:
+        # Get authenticated YouTube service
+        youtube, youtube_analytics = get_authenticated_service()
+
+        # Get all videos from the channel
+        videos = get_all_video_ids(youtube)
+        return jsonify(videos), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 
 if __name__ == '__main__':
     # Install required packages if not already installed

@@ -316,8 +316,7 @@ const nodeTypes = {
   results: ResultsNode,
   highlightResult: HighlightResultNode,
   transcript: TranscriptNode,
-  youtubeUpload: YouTubeUploadNode 
-
+  youtubeUpload: YouTubeUploadNode
 };
 
 export default function VideoHighlightsFlowApp() {
@@ -390,7 +389,6 @@ export default function VideoHighlightsFlowApp() {
         transcript: ''
       }
     }
-    
   ];
   
   // Initial edges
@@ -415,11 +413,14 @@ export default function VideoHighlightsFlowApp() {
     }));
   };
   
-  // Create individual result nodes for each highlight
+  // Create individual result nodes for each highlight and link with YouTube upload nodes
   useEffect(() => {
     if (highlights.length > 0) {
-      // Filter out any existing highlight result nodes first
-      const filteredNodes = nodes.filter(node => !node.type || node.type !== 'highlightResult');
+      // Filter out any existing highlight result nodes and youtube upload nodes first
+      const filteredNodes = nodes.filter(node => 
+        !node.type || 
+        (node.type !== 'highlightResult' && node.type !== 'youtubeUpload')
+      );
       
       // Create new highlight result nodes
       const resultNodes = highlights.map((highlight, index) => {
@@ -440,6 +441,30 @@ export default function VideoHighlightsFlowApp() {
         };
       });
       
+      // Create YouTube upload nodes for each highlight
+      const youtubeNodes = highlights.map((highlight, index) => {
+        // Position YouTube upload nodes directly below their respective highlight nodes
+        const xPos = 100 + (index % 3) * 300;
+        const yPos = 750 + Math.floor(index / 3) * 350 + 280; // Add vertical offset
+        
+        return {
+          id: `youtube-${highlight.id}`,
+          type: 'youtubeUpload',
+          position: { x: xPos, y: yPos },
+          draggable: true,
+          data: {
+            highlight: highlight
+          }
+        };
+      });
+      
+      // Create edges from result nodes to YouTube upload nodes
+      const youtubeEdges = highlights.map(highlight => ({
+        id: `e-highlight-${highlight.id}-youtube`,
+        source: `highlight-${highlight.id}`,
+        target: `youtube-${highlight.id}`
+      }));
+      
       // Create edges from hub to each result node
       const resultEdges = highlights.map(highlight => ({
         id: `e4-highlight-${highlight.id}`,
@@ -448,53 +473,17 @@ export default function VideoHighlightsFlowApp() {
       }));
       
       // Update nodes and edges
-      setNodes([...filteredNodes, ...resultNodes]);
+      setNodes([...filteredNodes, ...resultNodes, ...youtubeNodes]);
       
-      // Filter out old result edges
+      // Filter out old edges
       const filteredEdges = edges.filter(edge => 
-        !edge.id.startsWith('e4-highlight-')
+        !edge.id.startsWith('e4-highlight-') && 
+        !edge.id.startsWith('e-highlight-')
       );
       
-      setEdges([...filteredEdges, ...resultEdges]);
+      setEdges([...filteredEdges, ...resultEdges, ...youtubeEdges]);
     }
   }, [highlights, highlightFrames]);
-
-  useEffect(() => {
-    if (highlights.length > 0) {
-      const filteredNodes = nodes.filter(node => !node.type || (node.type !== 'highlightResult' && node.type !== 'youtubeUpload'));
-  
-      const resultNodes = highlights.map((highlight, index) => {
-        const xPos = 100 + (index % 3) * 300; 
-        const yPos = 750 + Math.floor(index / 3) * 350;
-        
-        return {
-          id: `highlight-${highlight.id}`,
-          type: 'highlightResult',
-          position: { x: xPos, y: yPos },
-          draggable: true,
-          data: {
-            highlight,
-            frameOption: highlightFrames[highlight.id] || '16:9',
-            onFrameChange: handleFrameChange
-          }
-        };
-      });
-  
-      // Add a YouTube Upload Node after results
-      const youtubeUploadNode = {
-        id: `youtube-upload`,
-        type: 'youtubeUpload',
-        position: { x: 250, y: 1100 },
-        draggable: true,
-        data: {
-          highlight: highlights[0] // default to first highlight for upload
-        }
-      };
-  
-      setNodes([...filteredNodes, ...resultNodes, youtubeUploadNode]);
-    }
-  }, [highlights, highlightFrames]);
-  
   
   // Update node data
   useEffect(() => {
@@ -540,7 +529,7 @@ export default function VideoHighlightsFlowApp() {
             transcript
           };
         }
-        // Individual highlight result nodes are handled in separate useEffect
+        // Individual highlight result nodes and YouTube nodes are handled in separate useEffect
         return node;
       })
     );

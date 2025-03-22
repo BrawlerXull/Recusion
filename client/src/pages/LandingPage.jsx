@@ -2,7 +2,7 @@ import React from "react";
 import { ArrowRight, Check, Menu, Mic, Heart, AlertCircle } from "lucide-react";
 import Navbar from "../components/Navbar";
 import { Link } from "react-router-dom";
-import dashboardImg from "image.png";
+import image from "../assets/image.png";
 import wqr from "../assets/wqr.png";
 
 const LandingPage = () => {
@@ -109,11 +109,15 @@ const LandingPage = () => {
                     <div className="relative">
                       <div className="bg-gray-800 rounded-t-xl p-2 aspect-[16/10]">
                         <div className="bg-white rounded-lg h-full p-4 overflow-hidden">
-                          <img
-                            src={"image.png"}
-                            alt="AI Shorts Generator Dashboard"
-                            className="w-full h-full object-cover rounded"
-                          />
+                        <Image
+  src={image}
+  alt="AI Shorts Generator Dashboard"
+  className="w-full h-full object-cover rounded"
+  layout="responsive"  // Adds responsiveness to the image
+  width={600}  // Define width for optimization
+  height={400}  // Define height for optimization
+/>
+
                         </div>
                       </div>
                       <div className="bg-gray-800 h-4 rounded-b-lg transform perspective-1000 rotateX-12"></div>

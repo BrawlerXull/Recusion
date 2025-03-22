@@ -14,7 +14,7 @@ const Navbar = () => {
             <Link href="/" className="flex items-center space-x-2 animate-fadeIn">
               <img src={""} className="w-8 h-10" alt="Logo" />
               <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-pink-600">
-                AudiAI
+                Automus
               </span>
             </Link>
 
